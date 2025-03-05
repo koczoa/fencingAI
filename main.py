@@ -19,26 +19,33 @@ def skeletonMaker(array: np.ndarray, footage: np.ndarray):
     10    Left Ankle
     11    Right Ankle
     """
+    def drawSegment(x: int, y:int, color: (int, int, int)) -> None:
+        if not array[x].any() or not array[y].any():
+            return
+        thickness = 3
+        cv2.line(footage, array[x].astype(int), array[y].astype(int), color, thickness)
 
-    thickness = 3
+
     # LEFT SIDE
-    color = (0, 0, 255)
-    cv2.line(footage, array[0].astype(int), array[2].astype(int), color, thickness)
-    cv2.line(footage, array[2].astype(int), array[4].astype(int), color, thickness)
-    cv2.line(footage, array[0].astype(int), array[6].astype(int), color, thickness)
-    cv2.line(footage, array[6].astype(int), array[8].astype(int), color, thickness)
-    cv2.line(footage, array[8].astype(int), array[10].astype(int), color, thickness)
+    red = (0, 0, 255)
+    drawSegment(0, 2, red)
+    drawSegment(2, 4, red)
+    drawSegment(0, 6, red)
+    drawSegment(6, 8, red)
+    drawSegment(8, 10, red)
+
     # RIGHT SIDE
-    color = (255, 0, 0)
-    cv2.line(footage, array[1].astype(int), array[3].astype(int), color, thickness)
-    cv2.line(footage, array[3].astype(int), array[5].astype(int), color, thickness)
-    cv2.line(footage, array[1].astype(int), array[7].astype(int), color, thickness)
-    cv2.line(footage, array[7].astype(int), array[9].astype(int), color, thickness)
-    cv2.line(footage, array[9].astype(int), array[11].astype(int), color, thickness)
+    blue = (255, 0, 0)
+    drawSegment(1, 3, blue)
+    drawSegment(3, 5, blue)
+    drawSegment(1, 7, blue)
+    drawSegment(7, 9, blue)
+    drawSegment(9, 11, blue)
+
     # MIDDLE
-    color = (0, 255, 0)
-    cv2.line(footage, array[0].astype(int), array[1].astype(int), color, thickness)
-    cv2.line(footage, array[6].astype(int), array[7].astype(int), color, thickness)
+    green = (0, 255, 0)
+    drawSegment(0, 1, green)
+    drawSegment(6, 7, green)
 
 def keypointDetection(result, footage):
     for r in result:
@@ -48,22 +55,27 @@ def keypointDetection(result, footage):
             skeletonMaker(current_person_keypoints, footage)
 
 def main() -> int:
-    if len(sys.argv) < 2:
-        print(f"No filename provided!")
+    if len(sys.argv) < 3:
+        print(f"No filename or yolo size provided!")
         return 1
-
-    model = YOLO("yolo11n-pose.pt")
-    file = "resources/" + sys.argv[1]
+    size = sys.argv[1]
+    model = YOLO(f"yolo11{size}-pose.pt")
+    file = "resources/" + sys.argv[2]
 
 
     footage = cv2.VideoCapture(filename=file)
     while footage.isOpened():
         success, frame = footage.read()
-        result = model.track(source=frame, save=False, show=False, name="result")
-        keypointDetection(result, frame)
-        cv2.imshow("skeletonised", frame)
-        if cv2.waitKey(10) & 0xFF == ord('q'):
+        if success:
+            result = model.track(source=frame, save=False, show=False, name="result")
+            keypointDetection(result, frame)
+            cv2.imshow("skeletonised", frame)
+            cv2.waitKey(0)
+        else:
             break
+         # if cv2.waitKey(10) & 0xFF == ord('q'):
+         #    break
+
 
     footage.release()
     cv2.destroyAllWindows()
