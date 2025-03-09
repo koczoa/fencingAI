@@ -4,27 +4,35 @@ import cv2
 import numpy as np
 
 
-def skeletonMaker(array: np.ndarray, footage: np.ndarray):
-    """
-    00    Left Shoulder
-    01    Right Shoulder
-    02    Left Elbow
-    03    Right Elbow
-    04    Left Wrist
-    05    Right Wrist
-    06    Left Hip
-    07    Right Hip
-    08    Left Knee
-    09    Right Knee
-    10    Left Ankle
-    11    Right Ankle
-    """
-    def drawSegment(x: int, y:int, color: (int, int, int)) -> None:
-        if not array[x].any() or not array[y].any():
-            return
-        thickness = 3
-        cv2.line(footage, array[x].astype(int), array[y].astype(int), color, thickness)
+"""
+00    Left Shoulder
+01    Right Shoulder
+02    Left Elbow
+03    Right Elbow
+04    Left Wrist
+05    Right Wrist
+06    Left Hip
+07    Right Hip
+08    Left Knee
+09    Right Knee
+10    Left Ankle
+11    Right Ankle
+"""
 
+
+def positionRecognition(array: np.ndarray):
+    pass
+
+def skeletonDrawer(array: np.ndarray, footage: np.ndarray):
+
+    def drawSegment(x: int, y:int, color: (int, int, int)) -> None:
+        try:
+            if not array[x].any() or not array[y].any():
+                return
+            thickness = 3
+            cv2.line(footage, array[x].astype(int), array[y].astype(int), color, thickness)
+        except IndexError:
+            pass
 
     # LEFT SIDE
     red = (0, 0, 255)
@@ -49,10 +57,13 @@ def skeletonMaker(array: np.ndarray, footage: np.ndarray):
 
 def keypointDetection(result, footage):
     for r in result:
-        nof = r.keypoints.shape[0]
+        if r.keypoints.xy[0].numpy().size == 0:
+            return
+        nof = r.keypoints.xy.shape[0]
+        print(f"number of people detected: {nof}")
         for p in range(nof):
             current_person_keypoints = np.delete(r.keypoints.xy[p].numpy(), slice(5), axis=0)
-            skeletonMaker(current_person_keypoints, footage)
+            skeletonDrawer(current_person_keypoints, footage)
 
 def main() -> int:
     if len(sys.argv) < 3:
@@ -67,10 +78,12 @@ def main() -> int:
     while footage.isOpened():
         success, frame = footage.read()
         if success:
-            result = model.track(source=frame, save=False, show=False, name="result")
+            frame = cv2.rotate(frame, cv2.ROTATE_180)
+            result = model.track(source=frame, save=False, show=False, name="result", persist=True, tracker="botsort.yaml")
             keypointDetection(result, frame)
             cv2.imshow("skeletonised", frame)
-            cv2.waitKey(0)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
         else:
             break
          # if cv2.waitKey(10) & 0xFF == ord('q'):
