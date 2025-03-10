@@ -63,7 +63,7 @@ def main() -> int:
     fileName = sys.argv[1]
     filePath = "resources/" + fileName + ".mp4"
     frameCount = 0
-    history = torch.load(f"processed/{fileName}.pt")
+    history = torch.load(f"processed/{fileName}.pt", map_location=torch.device("cpu"))
 
     footage = cv2.VideoCapture(filename=filePath)
     fps = footage.get(cv2.CAP_PROP_FPS)
