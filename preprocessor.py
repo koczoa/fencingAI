@@ -2,17 +2,13 @@ import numpy as np
 from ultralytics import YOLO
 import sys
 import cv2
-
+import torch
 
 def keypointDetection(result, history) -> None:
     for r in result:
-        keypointsRelevant = r.keypoints.xy.numpy()
+        keypointsRelevant = r.keypoints.xy
         # print(keypointsRelevant)
-        if keypointsRelevant[0].size == 0:
-            filler = np.zeros((1, 17, 2))
-            history.append(np.array(filler))
-        else:
-            history.append(keypointsRelevant)
+        history.append(keypointsRelevant)
 
 def main() -> int:
     if len(sys.argv) < 3:
@@ -39,7 +35,9 @@ def main() -> int:
         for line in history:
             f.write(f"{line}\n")
 
-    np.save(f"processed/{fileName}.npy", np.array(history))
+    # np.save(f"processed/{fileName}.npy", np.array(history))
+
+    torch.save(history, f"processed/{fileName}.pt")
     print(frameCount)
     footage.release()
     cv2.destroyAllWindows()

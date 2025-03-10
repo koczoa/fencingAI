@@ -1,6 +1,7 @@
 import sys
 import cv2
 import numpy as np
+import torch
 
 
 """
@@ -62,7 +63,7 @@ def main() -> int:
     fileName = sys.argv[1]
     filePath = "resources/" + fileName + ".mp4"
     frameCount = 0
-    history = np.load(f"processed/{fileName}.npy")
+    history = torch.load(f"processed/{fileName}.pt")
 
     footage = cv2.VideoCapture(filename=filePath)
     fps = footage.get(cv2.CAP_PROP_FPS)
@@ -70,7 +71,7 @@ def main() -> int:
     while footage.isOpened():
         success, frame = footage.read()
         if success:
-            currentFrame = history[frameCount]
+            currentFrame = history[frameCount].numpy()
             # print(f"current data: {currentFrame}")
             for detection in currentFrame:
                 current_person_keypoints = np.delete(detection, slice(5), axis=0)
