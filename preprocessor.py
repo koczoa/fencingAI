@@ -2,6 +2,7 @@ from ultralytics import YOLO
 import sys
 import cv2
 import numpy as np
+import time
 
 
 """
@@ -19,11 +20,13 @@ import numpy as np
 11    Right Ankle
 """
 
+history = []
+
 
 def positionRecognition(array: np.ndarray):
     pass
 
-def skeletonDrawer(array: np.ndarray, footage: np.ndarray):
+def skeletonDrawer(array: np.ndarray, footage: np.ndarray) -> None:
 
     def drawSegment(x: int, y:int, color: (int, int, int)) -> None:
         try:
@@ -55,14 +58,16 @@ def skeletonDrawer(array: np.ndarray, footage: np.ndarray):
     drawSegment(0, 1, green)
     drawSegment(6, 7, green)
 
-def keypointDetection(result, footage):
+def keypointDetection(result, footage) -> None:
     for r in result:
-        if r.keypoints.xy[0].numpy().size == 0:
+        keypointsRelevant = r.keypoints.xy
+        history.append(keypointsRelevant.tolist())
+        if keypointsRelevant[0].numpy().size == 0:
             return
-        nof = r.keypoints.xy.shape[0]
+        nof = keypointsRelevant.shape[0]
         print(f"number of people detected: {nof}")
         for p in range(nof):
-            current_person_keypoints = np.delete(r.keypoints.xy[p].numpy(), slice(5), axis=0)
+            current_person_keypoints = np.delete(keypointsRelevant[p].numpy(), slice(5), axis=0)
             skeletonDrawer(current_person_keypoints, footage)
 
 def main() -> int:
@@ -73,12 +78,10 @@ def main() -> int:
     model = YOLO(f"yolo11{size}-pose.pt")
     file = "resources/" + sys.argv[2]
 
-
     footage = cv2.VideoCapture(filename=file)
     while footage.isOpened():
         success, frame = footage.read()
         if success:
-            frame = cv2.rotate(frame, cv2.ROTATE_180)
             result = model.track(source=frame, save=False, show=False, name="result", persist=True, tracker="botsort.yaml")
             keypointDetection(result, frame)
             cv2.imshow("skeletonised", frame)
@@ -88,7 +91,9 @@ def main() -> int:
             break
          # if cv2.waitKey(10) & 0xFF == ord('q'):
          #    break
-
+    with open("saveFile", 'w') as f:
+        for line in history:
+            f.write("%s\n" % line)
 
     footage.release()
     cv2.destroyAllWindows()
